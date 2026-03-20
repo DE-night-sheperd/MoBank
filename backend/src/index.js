@@ -17,16 +17,20 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: process.env.NODE_ENV === 'production' 
-      ? ['https://mobank-inky.vercel.app', 'https://mobank-5u9110aqo-de-night-sheperds-projects.vercel.app']
-      : '*',
-    methods: ['GET', 'POST']
+    origin: ["https://mobank-inky.vercel.app", "https://mobank-5u9110aqo-de-night-sheperds-projects.vercel.app", "http://localhost:3000", "http://localhost:3001"],
+    methods: ['GET', 'POST'],
+    credentials: true
   }
 });
 
 // Middlewares
-app.use(helmet());
-app.use(cors());
+app.use(helmet({
+  contentSecurityPolicy: false,
+}));
+app.use(cors({
+  origin: ["https://mobank-inky.vercel.app", "https://mobank-5u9110aqo-de-night-sheperds-projects.vercel.app", "http://localhost:3000", "http://localhost:3001"],
+  credentials: true
+}));
 app.use(morgan('dev'));
 app.use(express.json());
 

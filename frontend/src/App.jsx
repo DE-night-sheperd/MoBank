@@ -7,11 +7,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const BACKEND_URL = import.meta.env.PROD 
   ? 'https://mobank-5u9110aqo-de-night-sheperds-projects.vercel.app' 
-  : 'http://localhost:5001';
+  : '';
 
 axios.defaults.baseURL = BACKEND_URL;
 
-const socket = io(BACKEND_URL);
+const socket = io(BACKEND_URL || 'http://localhost:5001');
 
 const getTimeRemaining = (deadline) => {
   const total = Date.parse(deadline) - Date.parse(new Date());
