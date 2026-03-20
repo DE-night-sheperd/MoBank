@@ -864,16 +864,34 @@ function App() {
                         className="landing-hero-img-animated" 
                       />
                       <div className="card-tier-info">
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '0.5rem' }}>
+                        <motion.div 
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.5, duration: 1 }}
+                          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '0.5rem' }}
+                        >
                           <ShieldCheck size={16} color="var(--mo-indigo)" />
                           <h3 style={{ margin: 0 }}>{cardTiers[selectedCardTier].name.split(' (')[0]}</h3>
-                        </div>
-                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '1rem', fontWeight: 600 }}>
+                        </motion.div>
+                        <motion.p 
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.8, duration: 1 }}
+                          style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '1rem', fontWeight: 600 }}
+                        >
                           Auto-assigned based on your total aggregated wealth.
-                        </p>
+                        </motion.p>
                         <div className="tier-benefits">
                           {cardTiers[selectedCardTier].benefits.map((b, i) => (
-                            <span key={i} className="benefit-tag">{b}</span>
+                            <motion.span 
+                              key={i} 
+                              initial={{ opacity: 0, scale: 0.8 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              transition={{ delay: 1.2 + (i * 0.2), duration: 0.5 }}
+                              className="benefit-tag"
+                            >
+                              {b}
+                            </motion.span>
                           ))}
                         </div>
                       </div>
