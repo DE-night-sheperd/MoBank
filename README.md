@@ -1,65 +1,29 @@
-# MoBank - Mobile Banking System 🚀
+# MoBank - Unified Financial Control Layer
 
-MoBank is a modern, secure, and real-time mobile banking system designed for a seamless financial experience.
+MoBank is a centralized financial platform that unifies multiple bank accounts into a single interface. It allows users to access, manage, and transact from all their accounts without switching between different banking applications or carrying multiple cards.
 
-## 🌟 Features
+## 🎯 Key Features
 
-- ✅ **Phone-based Auth**: Registration & authentication via phone number with OTP verification (WhatsApp/SMS).
-- ✅ **Card Management**: Link multiple Debit/Credit cards securely.
-- ✅ **Real-time P2P**: Instant peer-to-peer money transfers with live notifications.
-- ✅ **Trading**: Integrated capabilities for stocks and crypto trading.
-- ✅ **Analytics**: Comprehensive transaction history and financial analytics.
-- ✅ **Security**: End-to-end encryption, PCI-DSS compliance, and secure session management.
+- **Account Aggregation**: Link multiple bank accounts (Capitec, FNB, Discovery, etc.) via MoID/Mobile auto-discovery.
+- **Unified Dashboard**: View real-time balances and combined wealth in one place.
+- **Super Transaction Engine**: Pay bills, buy airtime, or send money by choosing from any of your linked accounts.
+- **MoAI Auto-Discovery**: Automatically find and link your accounts using secure identity scanning.
+- **Smart Selection Layer**: AI-driven recommendations for the best account to use (Lowest Fees, Max Rewards).
+- **MoCredit Score**: Integrated credit health monitoring based on unified financial data.
+- **Virtual MoCards**: Professional, tiered virtual cards auto-assigned based on your total wealth.
 
-## 🛠️ Tech Stack
+## 🚀 Tech Stack
 
-### Backend
-- **Node.js & Express.js**: High-performance REST API server.
-- **PostgreSQL**: Secure relational database for transactions and card data.
-- **Redis**: Caching and session management for real-time operations.
-- **Socket.io**: Real-time notifications for P2P transactions.
-- **JWT**: Secure token-based authentication.
-- **Twilio/WhatsApp API**: Integrated for OTP delivery.
+- **Frontend**: React, Vite, Framer Motion, Lucide React, Recharts, Tailwind CSS.
+- **Backend**: Node.js, Express, Socket.io (Real-time updates), Axios.
+- **Security**: Token-based authentication, 2FA, Secure Session Management.
 
-### Frontend
-- **React.js**: Modern, responsive web-based dashboard.
-- **Vite**: Ultra-fast build tool for the frontend.
-- **Axios**: Promise-based HTTP client for API requests.
-
-### Infrastructure
-- **Docker**: Containerization for easy deployment.
-- **GitHub Actions**: CI/CD pipelines for automated testing and deployment.
-- **Jest**: Comprehensive testing framework.
-
-## 📂 Project Structure
-
-```text
-MOBANK/
-├── backend/            # Express.js API
-│   ├── src/
-│   │   ├── config/     # DB & Redis configs
-│   │   ├── controllers/# Business logic
-│   │   ├── models/     # SQL schema & data models
-│   │   ├── routes/     # API endpoints
-│   │   └── index.js    # Entry point
-│   ├── Dockerfile
-│   └── .env            # Environment variables
-├── frontend/           # React Dashboard
-│   ├── src/
-│   │   ├── components/ # Reusable components
-│   │   ├── pages/      # Dashboard pages
-│   │   └── App.jsx     # Main entry
-│   ├── Dockerfile
-│   └── vite.config.js
-└── docker-compose.yml  # Infrastructure setup
-```
-
-## 🚀 Getting Started
+## 🛠️ Getting Started
 
 ### Prerequisites
+
 - Node.js (v18+)
-- Docker & Docker Compose
-- PostgreSQL & Redis (if running locally without Docker)
+- npm
 
 ### Installation
 
@@ -69,51 +33,26 @@ MOBANK/
    cd MoBank
    ```
 
-2. **Run with Docker (Recommended)**:
+2. **Setup Backend**:
    ```bash
-   docker compose up --build
+   cd backend
+   npm install
+   npm run dev
    ```
 
-3. **Run Locally**:
-   - **Backend**:
-     ```bash
-     cd backend
-     npm install
-     npm run dev
-     ```
-   - **Frontend**:
-     ```bash
-     cd frontend
-     npm install
-     npm run dev
-     ```
+3. **Setup Frontend**:
+   ```bash
+   cd ../frontend
+   npm install
+   npm run dev
+   ```
 
-## 🔐 Environment Variables
+4. **Access the app**:
+   Open [http://localhost:3001](http://localhost:3001) (or the port shown in your terminal).
 
-Create a `.env` file in the `backend/` directory:
-```plaintext
-DB_USER=postgres
-DB_PASSWORD=postgres
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=mobank
-REDIS_URL=redis://localhost:6379
-JWT_SECRET=your_secret_key
-TWILIO_ACCOUNT_SID=your_sid
-TWILIO_AUTH_TOKEN=your_token
-TWILIO_PHONE_NUMBER=your_phone
-```
+## 🧬 Mission
 
-## 📜 API Documentation
+To function as a “financial control layer” where users no longer interact with individual banks directly, but instead manage all financial activity through MoBank.
 
-- **Auth**:
-  - `POST /api/auth/request-otp`: Request OTP for login/registration.
-  - `POST /api/auth/verify-otp`: Verify OTP and get JWT token.
-- **User**:
-  - `GET /api/users/me`: Get current user details.
-- **Transactions**:
-  - `POST /api/transactions/transfer`: P2P money transfer.
-  - `GET /api/transactions/history`: Transaction history.
-
-## 🤝 Contributing
-Contributions are welcome! Please read the contributing guidelines before submitting a PR.
+---
+*MoBank: Financial Control. Reimagined.*
