@@ -220,7 +220,7 @@ function App() {
     if (!user) {
       const interval = setInterval(() => {
         setSelectedCardTier((prev) => (prev + 1) % cardTiers.length);
-      }, 3000); // Rotate cards every 3 seconds on the landing page
+      }, 5000); // Slower rotation (5 seconds)
       return () => clearInterval(interval);
     }
   }, [user, cardTiers.length]);
@@ -842,20 +842,16 @@ function App() {
                   <AnimatePresence mode="wait">
                     <motion.div 
                       key={selectedCardTier}
-                      initial={{ opacity: 0, scale: 0.9, rotateY: -10 }}
+                      initial={{ opacity: 0 }}
                       animate={{ 
-                        opacity: 1, 
-                        scale: 1, 
-                        rotateY: 0,
+                        opacity: 1,
                         y: [0, -10, 0] // Gentle floating effect
                       }}
-                      exit={{ opacity: 0, scale: 0.9, rotateY: 10 }}
+                      exit={{ opacity: 0 }}
                       transition={{ 
-                        opacity: { duration: 1.2, ease: "easeInOut" },
-                        scale: { duration: 1.2, ease: "easeInOut" },
-                        rotateY: { duration: 1.2, ease: "easeInOut" },
+                        opacity: { duration: 2.5, ease: "easeInOut" },
                         y: {
-                          duration: 4,
+                          duration: 5,
                           repeat: Infinity,
                           ease: "easeInOut"
                         }
