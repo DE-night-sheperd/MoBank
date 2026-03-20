@@ -78,6 +78,14 @@ exports.verifyOTP = async (req, res) => {
       { expiresIn: '24h' }
     );
 
+    // Record login session for Security Center
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const userAgent = req.headers['user-agent'];
+    await db.query(`
+      INSERT INTO login_sessions (user_id, ip_address, user_agent, status)
+      VALUES ($1, $2, $3, $4)
+    `, [user.id, ip, userAgent, 'active']);
+
     res.status(200).json({
       message: 'Login successful',
       token,

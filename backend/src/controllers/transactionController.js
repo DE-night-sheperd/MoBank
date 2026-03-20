@@ -48,6 +48,20 @@ exports.transfer = async (req, res, io) => {
       RETURNING *
     `;
     const transResult = await client.query(transQuery, [sender.id, receiver.id, amount, 'completed', 'p2p', description]);
+    const transactionId = transResult.rows[0].id;
+
+    // Double-Entry Ledger Implementation
+    // 1. Debit Sender
+    await client.query(`
+      INSERT INTO ledger_entries (transaction_id, account_id, amount, entry_type, balance_after)
+      VALUES ($1, $2, $3, $4, $5)
+    `, [transactionId, sender.id, -amount, 'debit', sender.balance - amount]);
+
+    // 2. Credit Receiver
+    await client.query(`
+      INSERT INTO ledger_entries (transaction_id, account_id, amount, entry_type, balance_after)
+      VALUES ($1, $2, $3, $4, $5)
+    `, [transactionId, receiver.id, amount, 'credit', receiver.balance + amount]);
 
     await client.query('COMMIT');
 

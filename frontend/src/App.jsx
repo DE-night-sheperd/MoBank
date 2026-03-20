@@ -385,9 +385,18 @@ function App() {
     setShowPinModal(true);
   };
 
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingStatus, setProcessingStatus] = useState('');
+  const [processingProgress, setProcessingProgress] = useState(0);
+
   const executeTransfer = async (pin) => {
     try {
-      await axios.post('/api/transactions/transfer', {
+      setShowPinModal(false);
+      setIsProcessing(true);
+      setProcessingProgress(10);
+      setProcessingStatus('Initiating secure ledger transaction...');
+      
+      const response = await axios.post('/api/transactions/transfer', {
         receiverPhone: transferData.phone,
         amount: parseFloat(transferData.amount),
         description: transferData.description,
@@ -395,13 +404,33 @@ function App() {
       }, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
-      alert('Transfer Successful!');
-      setTransferData({ phone: '', amount: '', description: '' });
-      fetchProfile(localStorage.getItem('token'));
-      setActiveTab('dashboard');
-      setShowPinModal(false);
-      setPinInput('');
+
+      // Simulation of a multi-step bank confirmation
+      setProcessingProgress(40);
+      setProcessingStatus('Performing MoAI fraud & AML check...');
+      
+      setTimeout(() => {
+        setProcessingProgress(70);
+        setProcessingStatus('Updating global bank ledgers...');
+        
+        setTimeout(() => {
+          setProcessingProgress(100);
+          setProcessingStatus('Transaction Finalized!');
+          
+          setTimeout(() => {
+            setIsProcessing(false);
+            setProcessingProgress(0);
+            alert('Transfer Successful!');
+            setTransferData({ phone: '', amount: '', description: '' });
+            fetchProfile(localStorage.getItem('token'));
+            setActiveTab('dashboard');
+            setPinInput('');
+          }, 800);
+        }, 1500);
+      }, 1500);
+
     } catch (error) {
+      setIsProcessing(false);
       alert(error.response?.data?.error || 'Transfer failed');
       setPinInput('');
     }
@@ -1733,7 +1762,29 @@ function App() {
             {activeTab === 'profile' && (
               <div className="mo-profile" style={{ padding: '1rem' }}>
                 <header className="mo-app-header"><button className="back-btn" onClick={() => setActiveTab('more')}>←</button><h1>MoProfile</h1></header>
-                <div className="section-card form-section" style={{ marginTop: '2rem' }}>
+                
+                <div className="section-card" style={{ marginTop: '1rem' }}>
+                  <h3 style={{ fontSize: '1rem', marginBottom: '1.5rem' }}>MoSecurity Center</h3>
+                  <div className="security-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 0', borderBottom: '1px solid #f1f5f9' }}>
+                    <div>
+                      <strong style={{ display: 'block', fontSize: '0.9rem' }}>Secure Session</strong>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--mo-mint)', fontWeight: 800 }}>ACTIVE NOW</span>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <span style={{ display: 'block', fontSize: '0.8rem' }}>RSA (102.165.2.4)</span>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>iPhone 15 Pro</span>
+                    </div>
+                  </div>
+                  <div className="security-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 0' }}>
+                    <div>
+                      <strong style={{ display: 'block', fontSize: '0.9rem' }}>2FA Protection</strong>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--mo-mint)', fontWeight: 800 }}>ENABLED ✓</span>
+                    </div>
+                    <Shield size={20} color="var(--mo-mint)" />
+                  </div>
+                </div>
+
+                <div className="section-card form-section" style={{ marginTop: '1.5rem' }}>
                   <div className="form-group"><label>Set Secure MoPIN</label><input type="password" maxLength="4" value={newPin} onChange={(e) => setNewPin(e.target.value)} /><button onClick={handleSetPin} className="btn-mo-primary" style={{ marginTop: '1rem' }}>Save MoPIN</button></div>
                 </div>
               </div>
@@ -1795,6 +1846,25 @@ function App() {
         </AnimatePresence>
         <button type="button" className="ai-toggle-btn" onClick={() => setShowAIChat(!showAIChat)}><div className="ai-ring"></div><div className="ai-ring-inner"><Coins size={30} /></div></button>
       </div>
+
+      <AnimatePresence>
+        {isProcessing && (
+          <div className="modal-overlay" style={{ zIndex: 10000 }}>
+            <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="processing-modal" style={{ background: 'white', padding: '2rem', borderRadius: '1.5rem', textAlign: 'center', maxWidth: '300px', width: '90%' }}>
+              <div className="mo-spinner" style={{ margin: '0 auto 1.5rem' }}></div>
+              <h3 style={{ margin: '0 0 1rem' }}>Bank Secure Processing</h3>
+              <div style={{ width: '100%', height: '8px', background: '#f1f5f9', borderRadius: '4px', marginBottom: '1rem', overflow: 'hidden' }}>
+                <motion.div 
+                  initial={{ width: 0 }} 
+                  animate={{ width: `${processingProgress}%` }} 
+                  style={{ height: '100%', background: 'var(--mo-indigo)' }}
+                />
+              </div>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>{processingStatus}</p>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {showPinModal && (
