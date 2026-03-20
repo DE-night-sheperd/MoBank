@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { io } from 'socket.io-client';
 import { Wallet, CreditCard, Send, History, User, LogOut, Plus, ChevronRight, Coins, TrendingUp, ShieldCheck, PieChart, MessageCircle, SendHorizonal, Bot, FileText, Bell, Info, Shield, ArrowRight, ExternalLink, Smartphone, Zap, Receipt, Ticket, Target, Scan } from 'lucide-react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, Pie, Pie as RePie, PieChart as RePieChart } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, Pie, Pie as RePie, PieChart as RePieChart, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const BACKEND_URL = ''; // Same-origin proxying in production
@@ -841,6 +841,14 @@ function App() {
     { name: 'Crypto', value: 3000, color: '#10b981' },
   ];
 
+  const getRadarData = () => [
+    { subject: 'Saving', A: 85, fullMark: 100 },
+    { subject: 'Spending', A: 40, fullMark: 100 },
+    { subject: 'Rewards', A: 90, fullMark: 100 },
+    { subject: 'Crypto', A: 65, fullMark: 100 },
+    { subject: 'Social', A: 50, fullMark: 100 },
+  ];
+
   const logout = () => {
     setUser(null);
     localStorage.removeItem('token');
@@ -1059,6 +1067,10 @@ function App() {
                 </header>
 
                 <div className="mo-dashboard-summary">
+                  <div className="wealth-wave-bg">
+                    <div className="wave"></div>
+                    <div className="wave"></div>
+                  </div>
                   <div className="summary-row">
                     <div className="summary-item">
                       <span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Unified MoBalance</span>
@@ -1812,6 +1824,30 @@ function App() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#ef4444' }}></div><span style={{ fontSize: '0.8rem', color: '#64748b' }}>Spending</span></div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#10b981' }}></div><span style={{ fontSize: '0.8rem', color: '#64748b' }}>Savings</span></div>
                     </div>
+                  </div>
+                  <div className="section-card" style={{ marginTop: '1.5rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                      <h3 style={{ margin: 0 }}>MoVision DNA</h3>
+                      <span style={{ fontSize: '0.65rem', color: 'var(--mo-indigo)', fontWeight: 800, textTransform: 'uppercase' }}>Financial Personality</span>
+                    </div>
+                    <div style={{ height: '220px', width: '100%', display: 'flex', justifyContent: 'center' }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <RadarChart cx="50%" cy="50%" outerRadius="80%" data={getRadarData()}>
+                          <PolarGrid stroke="#f1f5f9" />
+                          <PolarAngleAxis dataKey="subject" tick={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }} />
+                          <Radar
+                            name="MoUser"
+                            dataKey="A"
+                            stroke="var(--mo-indigo)"
+                            fill="var(--mo-indigo)"
+                            fillOpacity={0.1}
+                          />
+                        </RadarChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textAlign: 'center', margin: '1rem 0 0', fontWeight: 600 }}>
+                      You are a <span style={{ color: 'var(--mo-indigo)', fontWeight: 800 }}>Reward Specialist</span>. Keep it up!
+                    </p>
                   </div>
                   <div className="section-card" style={{ marginTop: '1.5rem' }}>
                     <h3>Asset Distribution</h3>

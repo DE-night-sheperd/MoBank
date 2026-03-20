@@ -137,6 +137,58 @@ body {
   100% { transform: rotate(360deg); }
 }
 
+/* Wealth Wave Animation */
+.mo-dashboard-summary {
+  position: relative;
+  overflow: hidden;
+  background: white;
+  padding: 1.5rem;
+  border-radius: 1.5rem;
+  border: 1px solid #f1f5f9;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+  z-index: 1;
+}
+
+.wealth-wave-bg {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, transparent 60%, rgba(79, 70, 229, 0.05) 100%);
+  z-index: -1;
+}
+
+.wave {
+  position: absolute;
+  bottom: -150%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: rgba(79, 70, 229, 0.03);
+  border-radius: 40%;
+  animation: waveRotate 15s infinite linear;
+}
+
+.wave:nth-child(2) {
+  bottom: -145%;
+  background: rgba(79, 70, 229, 0.02);
+  animation: waveRotate 10s infinite linear;
+}
+
+@keyframes waveRotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Radar Chart Enhancement */
+.recharts-polar-grid-concentric-path {
+  stroke: #e2e8f0;
+}
+.recharts-polar-angle-axis-line {
+  stroke: #e2e8f0;
+}
+
 .mo-app-header {
   padding: 2rem 1.5rem 1rem;
   background: white;
