@@ -1,17 +1,31 @@
 {
   "version": 2,
-  "rewrites": [
+  "builds": [
     {
-      "source": "/api/socket.io/(.*)",
-      "destination": "backend/src/index.js"
+      "src": "frontend/package.json",
+      "use": "@vercel/static-build",
+      "config": { "distDir": "dist" }
     },
     {
-      "source": "/api/(.*)",
-      "destination": "backend/src/index.js"
+      "src": "backend/src/index.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/socket.io/(.*)",
+      "dest": "backend/src/index.js"
     },
     {
-      "source": "/(.*)",
-      "destination": "frontend/index.html"
+      "src": "/api/(.*)",
+      "dest": "backend/src/index.js"
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "frontend/index.html"
     }
   ]
 }

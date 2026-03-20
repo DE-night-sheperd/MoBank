@@ -5,13 +5,14 @@ import { Wallet, CreditCard, Send, History, User, LogOut, Plus, ChevronRight, Co
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, Pie, Pie as RePie, PieChart as RePieChart } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const BACKEND_URL = ''; // Production uses same origin proxying
+const BACKEND_URL = ''; // Same-origin proxying in production
 
 axios.defaults.baseURL = BACKEND_URL;
 
 const socket = io(window.location.origin, {
   path: '/api/socket.io',
-  transports: ['websocket', 'polling']
+  transports: ['polling', 'websocket'], // Prefer polling first for serverless
+  reconnection: true
 });
 
 const getTimeRemaining = (deadline) => {
