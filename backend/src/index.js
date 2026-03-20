@@ -17,7 +17,9 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: '*', // In production, restrict this to your frontend URL
+    origin: process.env.NODE_ENV === 'production' 
+      ? ['https://mobank-inky.vercel.app', 'https://mobank-5u9110aqo-de-night-sheperds-projects.vercel.app']
+      : '*',
     methods: ['GET', 'POST']
   }
 });
