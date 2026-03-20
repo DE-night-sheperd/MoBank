@@ -155,6 +155,12 @@ function App() {
     unlocked: ['Priority Support', 'Virtual Card Pro', 'Lower Crypto Fees']
   });
 
+  const [aiInsights, setAiInsights] = useState([
+    { id: 1, type: 'reward', text: "Move R5,000 to Discovery Bank to unlock 2x MoRewards this month.", icon: '🎁' },
+    { id: 2, type: 'saving', text: "You could save R450/mo by switching your Netflix bill to your MoNavy card.", icon: '💡' },
+    { id: 3, type: 'crypto', text: "Solana is up 8% today. Your MoAI suggests holding your current SOL position.", icon: '📈' }
+  ]);
+
   const [selectedCardTier, setSelectedCardTier] = useState(0);
 
   const cardTiers = [
@@ -969,9 +975,21 @@ function App() {
                 <p>{isScanning ? 'MoAI is scanning for your accounts...' : `Enter the MoCode sent to ${phone}`}</p>
                 {message && <p className="error-msg" style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '0.5rem', fontWeight: 600, textAlign: 'center' }}>{message}</p>}
                 {isScanning ? (
-                  <div className="scanning-container" style={{ textAlign: 'center', padding: '2rem' }}>
+                  <div className="scanning-container" style={{ textAlign: 'center', padding: '2rem', position: 'relative', overflow: 'hidden' }}>
+                    <div className="mo-scan-line"></div>
                     <div className="mo-spinner" style={{ margin: '0 auto 1rem' }}></div>
-                    <p style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--mo-indigo)' }}>Discovering linked bank accounts via MoID...</p>
+                    <motion.div
+                      animate={{ opacity: [0.5, 1, 0.5] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                      style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--mo-indigo)' }}
+                    >
+                      MoAI is scanning for your global bank accounts...
+                    </motion.div>
+                    <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                      <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Verifying MoID: 403017098</span>
+                      <span style={{ fontSize: '0.65rem', color: 'var(--mo-mint)', fontWeight: 800 }}>Linking Capitec Bank... ✓</span>
+                      <span style={{ fontSize: '0.65rem', color: 'var(--mo-mint)', fontWeight: 800 }}>Linking Discovery Bank... ✓</span>
+                    </div>
                   </div>
                 ) : (
                   <form onSubmit={handleVerifyOTP}>
@@ -1032,6 +1050,26 @@ function App() {
                     </div>
                     <div style={{ display: 'flex', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600, marginTop: '0.25rem' }}>
                       Aggregated from {moAccounts.length + 1} linked accounts
+                    </div>
+                  </div>
+
+                  <div className="ai-insights-ticker" style={{ marginTop: '1.5rem', background: 'rgba(79, 70, 229, 0.05)', padding: '1rem', borderRadius: '1rem', border: '1px dashed var(--mo-indigo)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '0.75rem' }}>
+                      <Bot size={18} color="var(--mo-indigo)" />
+                      <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--mo-indigo)', textTransform: 'uppercase' }}>MoAI Smart Insights</span>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {aiInsights.map(insight => (
+                        <motion.div 
+                          key={insight.id} 
+                          initial={{ opacity: 0, x: -10 }} 
+                          animate={{ opacity: 1, x: 0 }}
+                          style={{ display: 'flex', gap: '10px', alignItems: 'center', fontSize: '0.75rem', color: '#475569', fontWeight: 600 }}
+                        >
+                          <span style={{ fontSize: '1rem' }}>{insight.icon}</span>
+                          <p style={{ margin: 0 }}>{insight.text}</p>
+                        </motion.div>
+                      ))}
                     </div>
                   </div>
                 </div>
