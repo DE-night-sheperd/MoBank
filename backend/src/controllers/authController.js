@@ -19,7 +19,8 @@ exports.requestOTP = async (req, res) => {
   }
 
   // For development, use a fixed OTP or log the generated one
-  const otp = process.env.NODE_ENV === 'production' ? Math.floor(100000 + Math.random() * 900000).toString() : '123456';
+  // Vercel/Production check: Always use 123456 for easier testing in this stage unless explicitly changed
+  const otp = '123456';
 
   try {
     // Save OTP to Redis with 5 min expiry
