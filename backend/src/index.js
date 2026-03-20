@@ -43,6 +43,10 @@ app.use('/api/crypto', cryptoRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/payments', paymentRoutes);
 
+app.get('/api/test', (req, res) => {
+  res.json({ message: 'API is reachable at /api/test' });
+});
+
 app.get('/', (req, res) => {
   res.json({ message: 'MoBank API is running' });
 });
