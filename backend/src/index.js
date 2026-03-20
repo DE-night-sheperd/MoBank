@@ -16,8 +16,9 @@ const paymentRoutes = require('./routes/paymentRoutes');
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
+  path: '/api/socket.io',
   cors: {
-    origin: ["https://mobank-inky.vercel.app", "https://mobank-5u9110aqo-de-night-sheperds-projects.vercel.app", "http://localhost:3000", "http://localhost:3001"],
+    origin: ["https://mobank-inky.vercel.app", "http://localhost:3000", "http://localhost:3001"],
     methods: ['GET', 'POST'],
     credentials: true
   }

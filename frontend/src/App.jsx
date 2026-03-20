@@ -6,12 +6,14 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { motion, AnimatePresence } from 'framer-motion';
 
 const BACKEND_URL = import.meta.env.PROD 
-  ? 'https://mobank-5u9110aqo-de-night-sheperds-projects.vercel.app' 
+  ? '/api' 
   : '';
 
 axios.defaults.baseURL = BACKEND_URL;
 
-const socket = io(BACKEND_URL || 'http://localhost:5001');
+const socket = io(import.meta.env.PROD ? '/' : 'http://localhost:5001', {
+  path: '/api/socket.io'
+});
 
 const getTimeRemaining = (deadline) => {
   const total = Date.parse(deadline) - Date.parse(new Date());
