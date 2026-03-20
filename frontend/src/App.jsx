@@ -842,10 +842,24 @@ function App() {
                   <AnimatePresence mode="wait">
                     <motion.div 
                       key={selectedCardTier}
-                      initial={{ x: 50, opacity: 0, scale: 0.8 }}
-                      animate={{ x: 0, opacity: 1, scale: 1 }}
-                      exit={{ x: -50, opacity: 0, scale: 0.8 }}
-                      transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                      initial={{ opacity: 0, scale: 0.9, rotateY: -10 }}
+                      animate={{ 
+                        opacity: 1, 
+                        scale: 1, 
+                        rotateY: 0,
+                        y: [0, -10, 0] // Gentle floating effect
+                      }}
+                      exit={{ opacity: 0, scale: 0.9, rotateY: 10 }}
+                      transition={{ 
+                        opacity: { duration: 1.2, ease: "easeInOut" },
+                        scale: { duration: 1.2, ease: "easeInOut" },
+                        rotateY: { duration: 1.2, ease: "easeInOut" },
+                        y: {
+                          duration: 4,
+                          repeat: Infinity,
+                          ease: "easeInOut"
+                        }
+                      }}
                       className="landing-hero-card-wrapper"
                     >
                       <img 
