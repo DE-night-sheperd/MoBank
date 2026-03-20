@@ -18,7 +18,7 @@ const server = http.createServer(app);
 const io = new Server(server, {
   path: '/api/socket.io',
   cors: {
-    origin: ["https://mobank-inky.vercel.app", "http://localhost:3000", "http://localhost:3001"],
+    origin: "*",
     methods: ['GET', 'POST'],
     credentials: true
   }
@@ -29,7 +29,7 @@ app.use(helmet({
   contentSecurityPolicy: false,
 }));
 app.use(cors({
-  origin: ["https://mobank-inky.vercel.app", "https://mobank-5u9110aqo-de-night-sheperds-projects.vercel.app", "http://localhost:3000", "http://localhost:3001"],
+  origin: "*",
   credentials: true
 }));
 app.use(morgan('dev'));

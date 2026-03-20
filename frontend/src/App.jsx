@@ -312,10 +312,13 @@ function App() {
   const handleRequestOTP = async (e) => {
     e.preventDefault();
     try {
+      console.log('Requesting OTP for:', phone);
       const response = await axios.post('/api/auth/request-otp', { phone });
+      console.log('OTP Response:', response.data);
       setMessage(response.data.message);
       setStep(2);
     } catch (error) {
+      console.error('OTP Request Error:', error.response || error);
       setMessage(error.response?.data?.error || 'Failed to send OTP');
     }
   };
@@ -323,7 +326,9 @@ function App() {
   const handleVerifyOTP = async (e) => {
     e.preventDefault();
     try {
+      console.log('Verifying OTP:', otp, 'for:', phone);
       const response = await axios.post('/api/auth/verify-otp', { phone, otp });
+      console.log('Verify Response:', response.data);
       setIsScanning(true);
       
       // Super Financial System: Auto-Discovery based on Mobile/ID
@@ -334,6 +339,7 @@ function App() {
       }, 3000);
       
     } catch (error) {
+      console.error('Verify Error:', error.response || error);
       setMessage(error.response?.data?.error || 'Verification failed');
     }
   };
