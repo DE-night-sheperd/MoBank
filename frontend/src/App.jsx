@@ -9,7 +9,7 @@ const BACKEND_URL = ''; // Same-origin proxying in production
 
 axios.defaults.baseURL = BACKEND_URL;
 
-const socket = io(window.location.origin, {
+const socket = io(import.meta.env.PROD ? window.location.origin : 'http://localhost:5001', {
   path: '/api/socket.io',
   transports: ['polling', 'websocket'], // Prefer polling first for serverless
   reconnection: true
@@ -215,6 +215,15 @@ function App() {
   ];
 
   const [selectedAccountId, setSelectedAccountId] = useState(101); // Default to first account
+
+  useEffect(() => {
+    if (!user) {
+      const interval = setInterval(() => {
+        setSelectedCardTier((prev) => (prev + 1) % cardTiers.length);
+      }, 3000); // Rotate cards every 3 seconds on the landing page
+      return () => clearInterval(interval);
+    }
+  }, [user, cardTiers.length]);
 
   const totalBalance = moAccounts.reduce((acc, curr) => acc + curr.balance, user?.balance || 0);
 
@@ -930,6 +939,7 @@ function App() {
               </div>
               <div className="auth-card-app mo-style">
                 <p>{isScanning ? 'MoAI is scanning for your accounts...' : `Enter the MoCode sent to ${phone}`}</p>
+                {message && <p className="error-msg" style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '0.5rem', fontWeight: 600, textAlign: 'center' }}>{message}</p>}
                 {isScanning ? (
                   <div className="scanning-container" style={{ textAlign: 'center', padding: '2rem' }}>
                     <div className="mo-spinner" style={{ margin: '0 auto 1rem' }}></div>
