@@ -5,12 +5,13 @@ import { Wallet, CreditCard, Send, History, User, LogOut, Plus, ChevronRight, Co
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, Pie, Pie as RePie, PieChart as RePieChart } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const BACKEND_URL = ''; // Same origin in production and handled by Vite proxy in development
+const BACKEND_URL = ''; // Production uses same origin proxying
 
 axios.defaults.baseURL = BACKEND_URL;
 
-const socket = io(import.meta.env.PROD ? '/' : 'http://localhost:5001', {
-  path: '/api/socket.io'
+const socket = io(window.location.origin, {
+  path: '/api/socket.io',
+  transports: ['websocket', 'polling']
 });
 
 const getTimeRemaining = (deadline) => {
