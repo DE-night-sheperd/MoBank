@@ -5,9 +5,7 @@ import { Wallet, CreditCard, Send, History, User, LogOut, Plus, ChevronRight, Co
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, Pie, Pie as RePie, PieChart as RePieChart } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const BACKEND_URL = import.meta.env.PROD 
-  ? '/api' 
-  : '';
+const BACKEND_URL = ''; // Same origin in production and handled by Vite proxy in development
 
 axios.defaults.baseURL = BACKEND_URL;
 
