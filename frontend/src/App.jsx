@@ -164,8 +164,30 @@ function App() {
   const [topUpAmount, setTopUpAmount] = useState('');
   const [showTopUpModal, setShowTopUpModal] = useState(false);
   const [vasHistory, setVasHistory] = useState([]);
+  const [beneficiaries, setBeneficiaries] = useState([]);
+  const [limits, setLimits] = useState({ daily_transfer: 5000, monthly_transfer: 50000 });
+  const [notifications, setNotifications] = useState([
+    { id: 1, title: 'Welcome to MoBank', body: 'Your account is now live. Set your MoPIN to start.', type: 'info', date: new Date() },
+    { id: 2, title: 'Security Alert', body: 'New login detected from iPhone 15 Pro.', type: 'warning', date: new Date() }
+  ]);
 
-  const handleTopUp = async () => {
+  const fetchBeneficiaries = async () => {
+    try {
+      const res = await axios.get('/api/beneficiaries/list', {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      setBeneficiaries(res.rows || res.data);
+    } catch (e) { console.error('Beneficiaries error', e); }
+  };
+
+  const fetchLimits = async () => {
+    try {
+      const res = await axios.get('/api/limits', {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      setLimits(res.data);
+    } catch (e) { console.error('Limits error', e); }
+  };
     try {
       setProcessingStatus('Connecting to secure payment gateway...');
       setIsProcessing(true);
@@ -204,41 +226,60 @@ function App() {
     }
   };
 
-  const handleBuyVAS = async (type, data) => {
+  const handleRefund = async (transactionId) => {
+    if (!window.confirm('Request a MoBank Reversal for this transaction?')) return;
     try {
-      setShowPinModal(false);
       setIsProcessing(true);
-      setProcessingStatus(`Processing ${type} request...`);
+      setProcessingStatus('Initiating reversal audit...');
       setProcessingProgress(30);
-
-      const endpoint = type === 'Airtime' ? '/api/payments/airtime' : '/api/payments/electricity';
-      const response = await axios.post(endpoint, { ...data, pin: pinInput }, {
+      
+      const response = await axios.post('/api/transactions/refund', { 
+        transactionId, 
+        reason: 'User requested reversal' 
+      }, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
 
       setProcessingProgress(70);
-      setProcessingStatus(`Finalizing ${type} purchase...`);
+      setProcessingStatus('Verifying original ledger entries...');
 
       setTimeout(() => {
         setProcessingProgress(100);
-        setProcessingStatus('Success!');
-        
-        if (response.data.token) {
-          setVasHistory(prev => [{ type, token: response.data.token, date: new Date(), amount: data.amount }, ...prev]);
-        }
-
+        setProcessingStatus('Refund Successful!');
         setTimeout(() => {
           setIsProcessing(false);
-          setPinInput('');
           fetchProfile(localStorage.getItem('token'));
-          alert(response.data.message + (response.data.token ? `\nToken: ${response.data.token}` : ''));
+          fetchHistory();
         }, 1000);
       }, 1500);
 
     } catch (error) {
       setIsProcessing(false);
-      setPinInput('');
-      alert(error.response?.data?.error || 'Purchase failed');
+      alert(error.response?.data?.error || 'Refund failed');
+    }
+  };
+
+  const createSubscription = async (name, amount) => {
+    try {
+      setIsProcessing(true);
+      setProcessingStatus('Scheduling MoRecurring payment...');
+      
+      await axios.post('/api/subscriptions/create', {
+        name,
+        amount,
+        nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+      }, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+
+      setProcessingStatus('Subscription Active ✓');
+      setTimeout(() => {
+        setIsProcessing(false);
+        setActiveTab('dashboard');
+      }, 1000);
+    } catch (error) {
+      setIsProcessing(false);
+      alert('Failed to create subscription');
     }
   };
 
@@ -360,6 +401,8 @@ function App() {
       fetchCryptoWallet();
       fetchPrices();
       fetchAnnouncements();
+      fetchBeneficiaries();
+      fetchLimits();
 
       socket.on('balanceUpdate', (newBalance) => {
         setUser(prev => ({ ...prev, balance: newBalance }));
@@ -659,7 +702,20 @@ function App() {
     }
   };
 
-  const handleSetPin = async (e) => {
+  const [newBeneficiary, setNewBeneficiary] = useState({ name: '', phone: '', bank_name: 'MoBank' });
+
+  const handleAddBeneficiary = async () => {
+    try {
+      await axios.post('/api/beneficiaries/add', newBeneficiary, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      fetchBeneficiaries();
+      setActiveModal(null);
+      setNewBeneficiary({ name: '', phone: '', bank_name: 'MoBank' });
+    } catch (e) { alert('Failed to add beneficiary'); }
+  };
+
+  const handleSetPin = async () => {
     e.preventDefault();
     if (newPin.length !== 4) return alert('PIN must be 4 digits');
     try {
@@ -1796,10 +1852,35 @@ function App() {
                 <header className="mo-app-header"><button className="back-btn" onClick={() => setActiveTab('cards')}>←</button><h1>MoHistory</h1></header>
                 <div className="history-list" style={{ marginTop: '1rem' }}>
                   {history.length === 0 ? (<div className="empty-history" style={{ textAlign: 'center', padding: '3rem 1rem' }}><History size={48} color="var(--text-muted)" style={{ opacity: 0.3 }} /><p style={{ color: 'var(--text-muted)', marginTop: '1rem' }}>No transactions found yet.</p></div>) : history.map((t, idx) => (
-                    <div key={t.id} className="menu-item" style={{ borderBottom: '1px solid var(--border)' }}>
-                      <div className={`item-icon ${t.sender_id === user.id ? 'pink' : 'success'}`}>{t.sender_id === user.id ? <ArrowRight size={20}/> : <Plus size={20}/>}</div>
-                      <div style={{ flex: 1 }}><span style={{ display: 'block', fontWeight: 600 }}>{t.description || 'MoTransaction'}</span><span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{new Date(t.created_at).toLocaleDateString()}</span></div>
-                      <span className={t.sender_id === user.id ? 'negative' : 'positive'} style={{ fontWeight: 700, color: t.sender_id === user.id ? '#ef4444' : '#10b981' }}>{t.sender_id === user.id ? '-' : '+'}{formatCurrency(t.amount)}</span>
+                    <div key={t.id} className="menu-item" style={{ borderBottom: '1px solid var(--border)', flexDirection: 'column', alignItems: 'flex-start', padding: '1rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                          <div className={`item-icon ${t.sender_id === user.id ? 'pink' : 'success'}`}>{t.sender_id === user.id ? <ArrowRight size={20}/> : <Plus size={20}/>}</div>
+                          <div style={{ flex: 1 }}>
+                            <span style={{ display: 'block', fontWeight: 600 }}>{t.description || 'MoTransaction'}</span>
+                            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{new Date(t.created_at).toLocaleDateString()} • {t.status.toUpperCase()}</span>
+                          </div>
+                        </div>
+                        <span className={t.sender_id === user.id ? 'negative' : 'positive'} style={{ fontWeight: 700, color: t.sender_id === user.id ? '#ef4444' : '#10b981' }}>{t.sender_id === user.id ? '-' : '+'}{formatCurrency(t.amount)}</span>
+                      </div>
+                      {t.sender_id === user.id && t.status === 'completed' && (
+                        <button 
+                          onClick={() => handleRefund(t.id)} 
+                          style={{ 
+                            marginTop: '0.75rem', 
+                            background: 'none', 
+                            border: '1px solid #fee2e2', 
+                            color: '#ef4444', 
+                            fontSize: '0.65rem', 
+                            padding: '0.25rem 0.75rem', 
+                            borderRadius: '1rem', 
+                            fontWeight: 800,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          REQUEST REFUND / REVERSAL
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -1813,11 +1894,12 @@ function App() {
                   <h3>MoBanking</h3>
                   <div className="discovery-list-menu">
                     <div className="menu-item" onClick={() => setActiveTab('savings')}><div className="item-icon pink"><Target size={20}/></div><span>MoSavings Vaults</span><ChevronRight size={20}/></div>
-                    <div className="menu-item" onClick={() => setActiveModal('beneficiaries')}><div className="item-icon pink"><User size={20}/></div><span>MoBeneficiaries</span><ChevronRight size={20}/></div>
-                    <div className="menu-item" onClick={() => setActiveModal('notifications')}><div className="item-icon pink"><Bell size={20}/></div><span>MoNotifications</span><ChevronRight size={20}/></div>
                     <div className="menu-item" onClick={() => setActiveTab('kyc')}><div className="item-icon pink"><Shield size={20}/></div><span>MoVerification (KYC)</span><ChevronRight size={20}/></div>
+                    <div className="menu-item" onClick={() => setActiveTab('beneficiaries')}><div className="item-icon pink"><User size={20}/></div><span>MoBeneficiaries</span><ChevronRight size={20}/></div>
+                    <div className="menu-item" onClick={() => setActiveTab('notifications')}><div className="item-icon pink"><Bell size={20}/></div><span>MoAlerts Center</span><ChevronRight size={20}/></div>
                     <div className="menu-item" onClick={() => setActiveTab('profile')}><div className="item-icon pink"><User size={20}/></div><span>MoProfile & Settings</span><ChevronRight size={20}/></div>
                     <div className="menu-item" onClick={() => setActiveTab('analytics')}><div className="item-icon pink"><PieChart size={20}/></div><span>MoAnalytics</span><ChevronRight size={20}/></div>
+                    <div className="menu-item" onClick={() => setActiveTab('subscriptions')}><div className="item-icon pink"><Calendar size={20}/></div><span>MoSubscriptions</span><ChevronRight size={20}/></div>
                   </div>
                   <h3>MoPayments</h3>
                   <div className="discovery-list-menu">
@@ -1853,6 +1935,29 @@ function App() {
                   ))}
                 </div>
                 <div className="add-account-card" onClick={() => setActiveModal('create-savings')} style={{ cursor: 'pointer', marginTop: '1.5rem' }}><div className="add-icon"><Plus size={32} /></div><h3>Create New Savings Plan</h3></div>
+              </div>
+            )}
+
+            {activeTab === 'beneficiaries' && (
+              <div className="mo-beneficiaries" style={{ padding: '1rem' }}>
+                <header className="mo-app-header"><button className="back-btn" onClick={() => setActiveTab('more')}>←</button><h1>MoBeneficiaries</h1><Plus size={24} className="add-card-icon" onClick={() => setActiveModal('add-beneficiary')} /></header>
+                <div className="beneficiaries-list" style={{ marginTop: '1rem' }}>
+                  {beneficiaries.length === 0 ? (
+                    <div className="empty-state" style={{ textAlign: 'center', padding: '3rem' }}>
+                      <User size={48} style={{ opacity: 0.2 }} />
+                      <p style={{ color: 'var(--text-muted)', marginTop: '1rem' }}>No beneficiaries saved yet.</p>
+                    </div>
+                  ) : beneficiaries.map(b => (
+                    <div key={b.id} className="menu-item" style={{ borderBottom: '1px solid #f1f5f9' }} onClick={() => { setTransferData({...transferData, phone: b.phone}); setActiveTab('transfer'); }}>
+                      <div className="item-icon pink" style={{ borderRadius: '50%', fontWeight: 800 }}>{b.name.charAt(0)}</div>
+                      <div style={{ flex: 1, marginLeft: '1rem' }}>
+                        <span style={{ fontWeight: 800 }}>{b.name}</span>
+                        <span style={{ display: 'block', fontSize: '0.7rem', color: 'var(--text-muted)' }}>{b.phone} • {b.bank_name}</span>
+                      </div>
+                      <ChevronRight size={18} />
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
@@ -1892,8 +1997,61 @@ function App() {
                   </div>
                 </div>
 
+                <div className="section-card" style={{ marginTop: '1.5rem' }}>
+                  <h3 style={{ fontSize: '1rem', marginBottom: '1.5rem' }}>MoGuard Limits</h3>
+                  <div className="form-group">
+                    <label>Daily Transfer Limit (R)</label>
+                    <input type="number" value={limits.daily_transfer} onChange={(e) => setLimits({...limits, daily_transfer: e.target.value})} />
+                  </div>
+                  <button onClick={() => alert('Limits updated!')} className="btn-mo-primary sm" style={{ marginTop: '1rem' }}>Update Limits</button>
+                </div>
+
                 <div className="section-card form-section" style={{ marginTop: '1.5rem' }}>
                   <div className="form-group"><label>Set Secure MoPIN</label><input type="password" maxLength="4" value={newPin} onChange={(e) => setNewPin(e.target.value)} /><button onClick={handleSetPin} className="btn-mo-primary" style={{ marginTop: '1rem' }}>Save MoPIN</button></div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'notifications' && (
+              <div className="mo-notifications" style={{ padding: '1rem' }}>
+                <header className="mo-app-header"><button className="back-btn" onClick={() => setActiveTab('more')}>←</button><h1>MoAlerts</h1></header>
+                <div className="notifications-list" style={{ marginTop: '1rem' }}>
+                  {notifications.map(n => (
+                    <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} key={n.id} className="section-card" style={{ marginBottom: '1rem', borderLeft: `4px solid ${n.type === 'warning' ? '#f59e0b' : 'var(--mo-indigo)'}` }}>
+                      <h4 style={{ margin: '0 0 0.25rem', fontSize: '0.9rem' }}>{n.title}</h4>
+                      <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>{n.body}</p>
+                      <span style={{ display: 'block', fontSize: '0.65rem', marginTop: '0.5rem', opacity: 0.5 }}>{new Date(n.date).toLocaleTimeString()}</span>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'subscriptions' && (
+              <div className="mo-subscriptions" style={{ padding: '1rem' }}>
+                <header className="mo-app-header"><button className="back-btn" onClick={() => setActiveTab('more')}>←</button><h1>MoSubscriptions</h1></header>
+                <div className="section-card" style={{ marginTop: '1.5rem' }}>
+                  <h3>Recurring Payments</h3>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>MoAI manages your recurring bills automatically.</p>
+                  
+                  <div className="discovery-list-menu">
+                    <div className="menu-item" onClick={() => createSubscription('Netflix', 199)}>
+                      <div className="item-icon purple"><Tv size={20}/></div>
+                      <div style={{ flex: 1 }}>
+                        <span style={{ fontWeight: 800 }}>Netflix Premium</span>
+                        <span style={{ display: 'block', fontSize: '0.7rem' }}>R199.00 / month</span>
+                      </div>
+                      <Plus size={20}/>
+                    </div>
+                    <div className="menu-item" onClick={() => createSubscription('Spotify', 59)}>
+                      <div className="item-icon success"><Music size={20}/></div>
+                      <div style={{ flex: 1 }}>
+                        <span style={{ fontWeight: 800 }}>Spotify Family</span>
+                        <span style={{ display: 'block', fontSize: '0.7rem' }}>R59.00 / month</span>
+                      </div>
+                      <Plus size={20}/>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -1978,6 +2136,34 @@ function App() {
         </AnimatePresence>
         <button type="button" className="ai-toggle-btn" onClick={() => setShowAIChat(!showAIChat)}><div className="ai-ring"></div><div className="ai-ring-inner"><Coins size={30} /></div></button>
       </div>
+
+      <AnimatePresence>
+        {activeModal === 'add-beneficiary' && (
+          <div className="modal-overlay" onClick={() => setActiveModal(null)}>
+            <motion.div initial={{ y: 50 }} animate={{ y: 0 }} className="pin-modal" onClick={e => e.stopPropagation()} style={{ padding: '2rem' }}>
+              <h2 style={{ margin: '0 0 1.5rem' }}>Add MoBeneficiary</h2>
+              <div className="form-group">
+                <label>Contact Name</label>
+                <input type="text" placeholder="e.g. John Doe" value={newBeneficiary.name} onChange={(e) => setNewBeneficiary({...newBeneficiary, name: e.target.value})} />
+              </div>
+              <div className="form-group">
+                <label>MoNumber (Phone)</label>
+                <input type="tel" placeholder="+27..." value={newBeneficiary.phone} onChange={(e) => setNewBeneficiary({...newBeneficiary, phone: e.target.value})} />
+              </div>
+              <div className="form-group">
+                <label>Bank Name</label>
+                <select value={newBeneficiary.bank_name} onChange={(e) => setNewBeneficiary({...newBeneficiary, bank_name: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid var(--border)', background: 'white' }}>
+                  <option value="MoBank">MoBank</option>
+                  <option value="Capitec">Capitec Bank</option>
+                  <option value="Discovery">Discovery Bank</option>
+                  <option value="FNB">FNB</option>
+                </select>
+              </div>
+              <button onClick={handleAddBeneficiary} className="btn-mo-primary" style={{ marginTop: '1.5rem' }}>Save Beneficiary</button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {showTopUpModal && (

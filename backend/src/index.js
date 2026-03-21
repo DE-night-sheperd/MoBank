@@ -12,6 +12,9 @@ const transactionRoutes = require('./routes/transactionRoutes');
 const cryptoRoutes = require('./routes/cryptoRoutes');
 const aiRoutes = require('./routes/aiRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
+const subscriptionRoutes = require('./routes/subscriptionRoutes');
+const beneficiaryRoutes = require('./routes/beneficiaryRoutes');
+const limitRoutes = require('./routes/limitRoutes');
 
 const app = express();
 const server = http.createServer(app);
@@ -42,6 +45,9 @@ app.use('/api/transactions', transactionRoutes(io));
 app.use('/api/crypto', cryptoRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/subscriptions', subscriptionRoutes);
+app.use('/api/beneficiaries', beneficiaryRoutes);
+app.use('/api/limits', limitRoutes);
 
 app.get('/api/test', (req, res) => {
   res.json({ message: 'API is reachable at /api/test' });

@@ -105,6 +105,43 @@ exports.transfer = async (req, res, io) => {
     await client.query('ROLLBACK');
     console.error('Transfer error:', error);
     res.status(400).json({ error: error.message || 'Internal server error' });
+exports.refund = async (req, res) => {
+  const { transactionId, reason } = req.body;
+  if (!transactionId) return res.status(400).json({ error: 'Transaction ID required' });
+
+  const client = await db.pool.connect();
+  try {
+    await client.query('BEGIN');
+    
+    // 1. Fetch the original transaction
+    const transRes = await client.query('SELECT * FROM transactions WHERE id = $1 AND sender_id = $2', [transactionId, req.user.userId]);
+    if (transRes.rows.length === 0) return res.status(404).json({ error: 'Transaction not found' });
+    const original = transRes.rows[0];
+
+    if (original.status === 'refunded') return res.status(400).json({ error: 'Already refunded' });
+
+    // 2. Calculate refund (using Finance Engine)
+    const { calculateReversal } = require('../utils/financeEngine');
+    const { totalRefund } = calculateReversal(original);
+
+    // 3. Update User Balance
+    await client.query('UPDATE users SET balance = balance + $1 WHERE id = $2', [totalRefund, req.user.userId]);
+
+    // 4. Update Original Transaction Status
+    await client.query('UPDATE transactions SET status = $1, description = $2 WHERE id = $3', 
+      ['refunded', `${original.description} (Refunded: ${reason})`, transactionId]);
+
+    // 5. Add Ledger Entry for Audit
+    await client.query(`
+      INSERT INTO ledger_entries (transaction_id, account_id, amount, entry_type, balance_after)
+      VALUES ($1, $2, $3, $4, (SELECT balance FROM users WHERE id = $2))
+    `, [transactionId, req.user.userId, totalRefund, 'credit']);
+
+    await client.query('COMMIT');
+    res.status(200).json({ message: 'Refund processed successfully', amount: totalRefund });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ error: 'Refund failed' });
   } finally {
     client.release();
   }

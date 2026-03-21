@@ -6,5 +6,6 @@ const authMiddleware = require('../middlewares/authMiddleware');
 module.exports = (io) => {
   router.post('/transfer', authMiddleware, (req, res) => transactionController.transfer(req, res, io));
   router.get('/history', authMiddleware, transactionController.getHistory);
+  router.post('/refund', authMiddleware, transactionController.refund);
   return router;
 };

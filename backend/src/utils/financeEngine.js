@@ -64,9 +64,33 @@ const convertCurrency = (amount, from, to) => {
   return parseFloat((zarAmount * EXCHANGE_RATES[to]).toFixed(2));
 };
 
+/**
+ * Processes a transaction reversal (Refund) logic
+ */
+const calculateReversal = (transaction) => {
+  // Banks usually refund the subtotal but might keep the service fee
+  // depending on why the transaction failed.
+  return {
+    refundAmount: transaction.amount,
+    reclaimTax: transaction.tax_amount,
+    totalRefund: transaction.amount + transaction.tax_amount
+  };
+};
+
+/**
+ * Subscription Logic Engine
+ */
+const SUBSCRIPTION_PLANS = {
+  NETFLIX: { amount: 199, day: 1 },
+  SPOTIFY: { amount: 59, day: 15 },
+  MO_PRIME: { amount: 99, day: 25 }
+};
+
 module.exports = {
   calculateTransactionBreakdown,
   detectFraudRisk,
   convertCurrency,
+  calculateReversal,
+  SUBSCRIPTION_PLANS,
   EXCHANGE_RATES
 };
