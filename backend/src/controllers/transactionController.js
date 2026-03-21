@@ -1,7 +1,8 @@
 const db = require('../config/db');
+const { detectFraudRisk, calculateTransactionBreakdown } = require('../utils/financeEngine');
 
 exports.transfer = async (req, res, io) => {
-  const { receiverPhone, amount, description, pin } = req.body;
+  const { receiverPhone, amount, description, pin, location = 'RSA' } = req.body;
 
   if (!receiverPhone || !amount || amount <= 0) {
     return res.status(400).json({ error: 'Invalid transfer details' });
@@ -12,18 +13,31 @@ exports.transfer = async (req, res, io) => {
   try {
     await client.query('BEGIN');
 
-    // Verify PIN
-    const pinRes = await client.query('SELECT transaction_pin FROM users WHERE id = $1', [req.user.userId]);
-    if (pinRes.rows[0].transaction_pin !== pin) {
+    // Verify PIN and Fetch sender
+    const senderRes = await client.query('SELECT * FROM users WHERE id = $1 FOR UPDATE', [req.user.userId]);
+    const sender = senderRes.rows[0];
+
+    if (sender.transaction_pin !== pin) {
       throw new Error('Invalid transaction PIN');
     }
 
-    // Check sender's balance
-    const senderRes = await client.query('SELECT id, balance FROM users WHERE id = $1 FOR UPDATE', [req.user.userId]);
-    const sender = senderRes.rows[0];
+    // MoAI FRAUD DETECTION
+    const fraudResult = detectFraudRisk(sender, amount, location);
+    if (fraudResult.isFlagged) {
+      await client.query('ROLLBACK');
+      return res.status(403).json({ 
+        error: 'Transaction flagged for security review',
+        code: 'FRAUD_BLOCK',
+        moai_reason: 'High velocity / unusual pattern detected'
+      });
+    }
 
-    if (sender.balance < amount) {
-      throw new Error('Insufficient funds');
+    // Financial Breakdown (Tax + Fees)
+    const breakdown = calculateTransactionBreakdown(amount, 'p2p');
+    const totalDeduction = breakdown.total;
+
+    if (sender.balance < totalDeduction) {
+      throw new Error(`Insufficient balance (Incl. VAT: R${breakdown.vat} & Service Fee: R${breakdown.serviceFee})`);
     }
 
     // Check receiver
@@ -38,16 +52,25 @@ exports.transfer = async (req, res, io) => {
     }
 
     // Perform transfer
-    await client.query('UPDATE users SET balance = balance - $1 WHERE id = $2', [amount, sender.id]);
+    await client.query('UPDATE users SET balance = balance - $1 WHERE id = $2', [totalDeduction, sender.id]);
     await client.query('UPDATE users SET balance = balance + $1 WHERE id = $2', [amount, receiver.id]);
 
     // Record transaction
     const transQuery = `
-      INSERT INTO transactions (sender_id, receiver_id, amount, status, transaction_type, description)
-      VALUES ($1, $2, $3, $4, $5, $6)
+      INSERT INTO transactions (sender_id, receiver_id, amount, status, transaction_type, description, tax_amount, fee_amount)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING *
     `;
-    const transResult = await client.query(transQuery, [sender.id, receiver.id, amount, 'completed', 'p2p', description]);
+    const transResult = await client.query(transQuery, [
+      sender.id, 
+      receiver.id, 
+      amount, 
+      'completed', 
+      'p2p', 
+      description,
+      breakdown.vat,
+      breakdown.serviceFee
+    ]);
     const transactionId = transResult.rows[0].id;
 
     // Double-Entry Ledger Implementation
@@ -55,7 +78,7 @@ exports.transfer = async (req, res, io) => {
     await client.query(`
       INSERT INTO ledger_entries (transaction_id, account_id, amount, entry_type, balance_after)
       VALUES ($1, $2, $3, $4, $5)
-    `, [transactionId, sender.id, -amount, 'debit', sender.balance - amount]);
+    `, [transactionId, sender.id, -totalDeduction, 'debit', sender.balance - totalDeduction]);
 
     // 2. Credit Receiver
     await client.query(`
@@ -75,7 +98,8 @@ exports.transfer = async (req, res, io) => {
 
     res.status(200).json({
       message: 'Transfer successful',
-      transaction: transResult.rows[0]
+      transaction: transResult.rows[0],
+      breakdown
     });
   } catch (error) {
     await client.query('ROLLBACK');

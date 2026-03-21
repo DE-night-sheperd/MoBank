@@ -161,7 +161,86 @@ function App() {
     { id: 3, type: 'crypto', text: "Solana is up 8% today. Your MoAI suggests holding your current SOL position.", icon: '📈' }
   ]);
 
-  const [selectedCardTier, setSelectedCardTier] = useState(0);
+  const [topUpAmount, setTopUpAmount] = useState('');
+  const [showTopUpModal, setShowTopUpModal] = useState(false);
+  const [vasHistory, setVasHistory] = useState([]);
+
+  const handleTopUp = async () => {
+    try {
+      setProcessingStatus('Connecting to secure payment gateway...');
+      setIsProcessing(true);
+      setProcessingProgress(20);
+      
+      const response = await axios.post('/api/payments/top-up', { amount: parseFloat(topUpAmount) }, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+
+      setProcessingProgress(50);
+      setProcessingStatus('Awaiting payment confirmation from bank...');
+
+      // Simulation of a successful checkout redirect and return
+      setTimeout(() => {
+        setProcessingProgress(80);
+        setProcessingStatus('Verifying transaction hash...');
+        
+        setTimeout(async () => {
+          // In a real app, the webhook would have updated the balance
+          // Here we manually refresh to show the "success"
+          setProcessingProgress(100);
+          setProcessingStatus('Funds cleared and added to MoBalance!');
+          
+          setTimeout(() => {
+            setIsProcessing(false);
+            setShowTopUpModal(false);
+            setTopUpAmount('');
+            fetchProfile(localStorage.getItem('token'));
+          }, 1000);
+        }, 2000);
+      }, 3000);
+
+    } catch (error) {
+      setIsProcessing(false);
+      alert('Top up failed');
+    }
+  };
+
+  const handleBuyVAS = async (type, data) => {
+    try {
+      setShowPinModal(false);
+      setIsProcessing(true);
+      setProcessingStatus(`Processing ${type} request...`);
+      setProcessingProgress(30);
+
+      const endpoint = type === 'Airtime' ? '/api/payments/airtime' : '/api/payments/electricity';
+      const response = await axios.post(endpoint, { ...data, pin: pinInput }, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+
+      setProcessingProgress(70);
+      setProcessingStatus(`Finalizing ${type} purchase...`);
+
+      setTimeout(() => {
+        setProcessingProgress(100);
+        setProcessingStatus('Success!');
+        
+        if (response.data.token) {
+          setVasHistory(prev => [{ type, token: response.data.token, date: new Date(), amount: data.amount }, ...prev]);
+        }
+
+        setTimeout(() => {
+          setIsProcessing(false);
+          setPinInput('');
+          fetchProfile(localStorage.getItem('token'));
+          alert(response.data.message + (response.data.token ? `\nToken: ${response.data.token}` : ''));
+        }, 1000);
+      }, 1500);
+
+    } catch (error) {
+      setIsProcessing(false);
+      setPinInput('');
+      alert(error.response?.data?.error || 'Purchase failed');
+    }
+  };
 
   const cardTiers = [
     { 
@@ -1075,8 +1154,25 @@ function App() {
                     <div className="summary-item">
                       <span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Unified MoBalance</span>
                       <div style={{ fontSize: '2.25rem', fontWeight: 900, margin: '0.25rem 0' }}>{formatCurrency(totalBalance)}</div>
-                      <div className={`status-indicator status-${creditClass}`}>
-                        <ShieldCheck size={14} /> {creditStatus} Health
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <div className={`status-indicator status-${creditClass}`}>
+                          <ShieldCheck size={14} /> {creditStatus} Health
+                        </div>
+                        <button 
+                          onClick={() => setShowTopUpModal(true)}
+                          style={{ 
+                            background: 'var(--mo-indigo)', 
+                            color: 'white', 
+                            border: 'none', 
+                            borderRadius: '2rem', 
+                            padding: '0.25rem 0.75rem', 
+                            fontSize: '0.65rem', 
+                            fontWeight: 900, 
+                            cursor: 'pointer' 
+                          }}
+                        >
+                          + TOP UP
+                        </button>
                       </div>
                     </div>
                     <div className="credit-score-circle" style={{ borderColor: creditScore >= 750 ? '#10b981' : creditScore >= 680 ? '#3b82f6' : '#f59e0b' }}>
@@ -1882,6 +1978,35 @@ function App() {
         </AnimatePresence>
         <button type="button" className="ai-toggle-btn" onClick={() => setShowAIChat(!showAIChat)}><div className="ai-ring"></div><div className="ai-ring-inner"><Coins size={30} /></div></button>
       </div>
+
+      <AnimatePresence>
+        {showTopUpModal && (
+          <div className="modal-overlay" onClick={() => setShowTopUpModal(false)}>
+            <motion.div initial={{ y: 50 }} animate={{ y: 0 }} className="pin-modal" onClick={e => e.stopPropagation()} style={{ padding: '2rem' }}>
+              <h2 style={{ margin: '0 0 0.5rem' }}>Top Up MoBalance</h2>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>Secure deposit via MoGateway</p>
+              <div className="form-group">
+                <label>Amount (ZAR)</label>
+                <input 
+                  type="number" 
+                  placeholder="e.g. 500" 
+                  value={topUpAmount} 
+                  onChange={(e) => setTopUpAmount(e.target.value)} 
+                  style={{ fontSize: '1.5rem', textAlign: 'center', fontWeight: 900 }}
+                />
+              </div>
+              <button 
+                onClick={handleTopUp} 
+                className="btn-mo-primary" 
+                style={{ marginTop: '1.5rem' }}
+                disabled={!topUpAmount || parseFloat(topUpAmount) <= 0}
+              >
+                Continue to Payment
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {isProcessing && (
